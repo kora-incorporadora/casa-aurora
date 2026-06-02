@@ -37,6 +37,17 @@
           background:#141414;color:#fff;font-size:16px;outline:none;transition:border-color .2s}
     input:focus{border-color:var(--gold)}
     input::placeholder{color:#6b6b6b}
+    select{width:100%;padding:15px 16px;border-radius:12px;border:1px solid #2a2a2a;
+           background:#141414;color:#fff;font-size:16px;outline:none;appearance:none;
+           -webkit-appearance:none;transition:border-color .2s;
+           background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23C9A961' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
+           background-repeat:no-repeat;background-position:right 16px center}
+    select:focus{border-color:var(--gold)}
+    .phone-row{display:flex;gap:8px}
+    .ddi{display:flex;align-items:center;justify-content:center;min-width:64px;padding:0 12px;
+         border-radius:12px;border:1px solid #2a2a2a;background:#141414;color:var(--gold);
+         font-size:16px;font-weight:600;white-space:nowrap}
+    .phone-row input{flex:1}
     .hp{position:absolute;left:-9999px;opacity:0;height:0;width:0}
     button{margin-top:6px;padding:16px;border:0;border-radius:12px;cursor:pointer;
            background:var(--gold);color:#0A0A0A;font-size:16px;font-weight:700;
@@ -79,9 +90,14 @@
       <form id="leadForm" autocomplete="on" novalidate>
         <label for="nome">Nome</label>
         <input id="nome" name="nome" type="text" placeholder="Seu nome" required>
+        <label for="pais">País</label>
+        <select id="pais" name="pais"></select>
         <label for="whatsapp">WhatsApp</label>
-        <input id="whatsapp" name="whatsapp" type="tel" inputmode="numeric"
-               placeholder="(35) 99999-9999" required>
+        <div class="phone-row">
+          <span class="ddi" id="ddi">+55</span>
+          <input id="whatsapp" name="whatsapp" type="tel" inputmode="numeric"
+                 placeholder="(35) 99999-9999" required>
+        </div>
         <!-- honeypot anti-spam (não preencher) -->
         <input class="hp" tabindex="-1" autocomplete="off" name="empresa" id="empresa">
         <div class="err" id="err"></div>
@@ -142,16 +158,71 @@
         'allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
     }
 
-    // máscara de WhatsApp (formato brasileiro)
-    var wa = $("whatsapp");
-    wa.addEventListener("input", function(){
-      var d = wa.value.replace(/\D/g,"").slice(0,11);
-      var out = "";
-      if (d.length > 0) out = "(" + d.slice(0,2);
-      if (d.length >= 2) out += ") " + d.slice(2,7);
-      if (d.length >= 7) out += "-" + d.slice(7,11);
-      wa.value = out;
+    // ===== Seletor de país (Brasil 1º, EUA 2º, demais em ordem alfabética) =====
+    var PAIS_TOPO = [
+      { n:"Brasil", d:"55", f:"🇧🇷" },
+      { n:"Estados Unidos", d:"1", f:"🇺🇸" }
+    ];
+    var PAIS_DEMAIS = [
+      {n:"Alemanha",d:"49",f:"🇩🇪"},{n:"Angola",d:"244",f:"🇦🇴"},{n:"Arábia Saudita",d:"966",f:"🇸🇦"},
+      {n:"Argentina",d:"54",f:"🇦🇷"},{n:"Austrália",d:"61",f:"🇦🇺"},{n:"Áustria",d:"43",f:"🇦🇹"},
+      {n:"Bélgica",d:"32",f:"🇧🇪"},{n:"Bolívia",d:"591",f:"🇧🇴"},{n:"Canadá",d:"1",f:"🇨🇦"},
+      {n:"Chile",d:"56",f:"🇨🇱"},{n:"China",d:"86",f:"🇨🇳"},{n:"Cingapura",d:"65",f:"🇸🇬"},
+      {n:"Colômbia",d:"57",f:"🇨🇴"},{n:"Coreia do Sul",d:"82",f:"🇰🇷"},{n:"Costa Rica",d:"506",f:"🇨🇷"},
+      {n:"Dinamarca",d:"45",f:"🇩🇰"},{n:"Egito",d:"20",f:"🇪🇬"},{n:"Emirados Árabes Unidos",d:"971",f:"🇦🇪"},
+      {n:"Equador",d:"593",f:"🇪🇨"},{n:"Eslováquia",d:"421",f:"🇸🇰"},{n:"Espanha",d:"34",f:"🇪🇸"},
+      {n:"Filipinas",d:"63",f:"🇵🇭"},{n:"Finlândia",d:"358",f:"🇫🇮"},{n:"França",d:"33",f:"🇫🇷"},
+      {n:"Grécia",d:"30",f:"🇬🇷"},{n:"Holanda",d:"31",f:"🇳🇱"},{n:"Hungria",d:"36",f:"🇭🇺"},
+      {n:"Índia",d:"91",f:"🇮🇳"},{n:"Indonésia",d:"62",f:"🇮🇩"},{n:"Irlanda",d:"353",f:"🇮🇪"},
+      {n:"Israel",d:"972",f:"🇮🇱"},{n:"Itália",d:"39",f:"🇮🇹"},{n:"Japão",d:"81",f:"🇯🇵"},
+      {n:"Líbano",d:"961",f:"🇱🇧"},{n:"Luxemburgo",d:"352",f:"🇱🇺"},{n:"Malásia",d:"60",f:"🇲🇾"},
+      {n:"Marrocos",d:"212",f:"🇲🇦"},{n:"México",d:"52",f:"🇲🇽"},{n:"Moçambique",d:"258",f:"🇲🇿"},
+      {n:"Noruega",d:"47",f:"🇳🇴"},{n:"Nova Zelândia",d:"64",f:"🇳🇿"},{n:"Panamá",d:"507",f:"🇵🇦"},
+      {n:"Paraguai",d:"595",f:"🇵🇾"},{n:"Peru",d:"51",f:"🇵🇪"},{n:"Polônia",d:"48",f:"🇵🇱"},
+      {n:"Portugal",d:"351",f:"🇵🇹"},{n:"Catar",d:"974",f:"🇶🇦"},{n:"Reino Unido",d:"44",f:"🇬🇧"},
+      {n:"República Tcheca",d:"420",f:"🇨🇿"},{n:"Romênia",d:"40",f:"🇷🇴"},{n:"Rússia",d:"7",f:"🇷🇺"},
+      {n:"Suécia",d:"46",f:"🇸🇪"},{n:"Suíça",d:"41",f:"🇨🇭"},{n:"Tailândia",d:"66",f:"🇹🇭"},
+      {n:"Turquia",d:"90",f:"🇹🇷"},{n:"Ucrânia",d:"380",f:"🇺🇦"},{n:"Uruguai",d:"598",f:"🇺🇾"},
+      {n:"Venezuela",d:"58",f:"🇻🇪"}
+    ];
+    PAIS_DEMAIS.sort(function(a,b){ return a.n.localeCompare(b.n, "pt"); });
+    var PAISES = PAIS_TOPO.concat(PAIS_DEMAIS);
+
+    var paisSel = $("pais"), ddi = $("ddi"), wa = $("whatsapp");
+    PAISES.forEach(function(c, i){
+      var o = document.createElement("option");
+      o.value = i;
+      o.textContent = c.f + "  " + c.n + " (+" + c.d + ")";
+      paisSel.appendChild(o);
     });
+    paisSel.value = "0"; // Brasil
+
+    function paisAtual(){ return PAISES[parseInt(paisSel.value, 10) || 0]; }
+
+    function aplicarMascara(){
+      var c = paisAtual();
+      var d = wa.value.replace(/\D/g, "");
+      if (c.d === "55"){ // Brasil: (DD) 9XXXX-XXXX
+        d = d.slice(0, 11);
+        var out = "";
+        if (d.length > 0) out = "(" + d.slice(0,2);
+        if (d.length >= 2) out += ") " + d.slice(2,7);
+        if (d.length >= 7) out += "-" + d.slice(7,11);
+        wa.value = out;
+      } else { // demais países: só dígitos
+        wa.value = d.slice(0, 15);
+      }
+    }
+
+    function atualizarPais(){
+      var c = paisAtual();
+      ddi.textContent = "+" + c.d;
+      wa.placeholder = (c.d === "55") ? "(35) 99999-9999" : "Número com DDD";
+      aplicarMascara();
+    }
+    paisSel.addEventListener("change", atualizarPais);
+    wa.addEventListener("input", aplicarMascara);
+    atualizarPais();
 
     // visitante que já se cadastrou neste aparelho pula direto pro vídeo
     if (localStorage.getItem("kora_casa_aurora_lead") === "1"){
@@ -161,11 +232,18 @@
     $("leadForm").addEventListener("submit", function(ev){
       ev.preventDefault();
       var nome = $("nome").value.trim();
+      var c    = paisAtual();
       var fone = wa.value.replace(/\D/g,"");
       var err  = $("err");
       if (nome.length < 2){ err.textContent = "Informe seu nome."; $("nome").focus(); return; }
-      if (fone.length < 10){ err.textContent = "Informe um WhatsApp válido com DDD."; wa.focus(); return; }
+      if (c.d === "55" && (fone.length < 10 || fone.length > 11)){
+        err.textContent = "Informe um WhatsApp válido com DDD."; wa.focus(); return;
+      }
+      if (c.d !== "55" && fone.length < 6){
+        err.textContent = "Informe um número de telefone válido."; wa.focus(); return;
+      }
       if ($("empresa").value){ return; } // honeypot acionado: ignora
+      var foneCompleto = "+" + c.d + " " + wa.value.trim();
       err.textContent = "";
       $("btn").disabled = true;
       show("step-loading");
@@ -178,8 +256,8 @@
       if (SHEET_ENDPOINT.indexOf("XXX") === -1){
         var body = new URLSearchParams();
         body.append("nome", nome);
-        body.append("whatsapp", wa.value);
-        body.append("origem", "QR Casa Aurora");
+        body.append("whatsapp", foneCompleto);
+        body.append("origem", "QR Casa Aurora · " + c.n);
         fetch(SHEET_ENDPOINT, { method:"POST", mode:"no-cors", body: body })
           .then(finalizar).catch(finalizar);
         // garante liberação mesmo se a rede demorar
