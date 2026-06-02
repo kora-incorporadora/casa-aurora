@@ -5,56 +5,167 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Casa Aurora — Kora</title>
   <!-- ================================================================
-       PÁGINA DE REDIRECIONAMENTO PERMANENTE — Casa Aurora (Kora)
-       O QR Code impresso na placa aponta para ESTA página.
+       CASA AURORA — Kora Incorporadora
+       Funil de captura: o QR impresso aponta para ESTA página.
+       Fluxo: lead preenche Nome + WhatsApp -> grava na planilha (Google
+       Sheets via Apps Script) -> libera o vídeo (YouTube) na própria página.
 
-       >>> PARA ATIVAR / TROCAR O VÍDEO NO FUTURO <<<
-       Edite APENAS a linha VIDEO_URL abaixo, troque pela URL do
-       YouTube (ex: https://youtu.be/AbCdEf...) e salve/publique.
-       O QR impresso continua valendo para sempre.
-       Enquanto a URL contiver "XXX", a página mostra "vídeo em breve"
-       em vez de redirecionar para um link quebrado.
+       >>> CONFIGURAÇÃO (editar só estas 2 linhas e publicar) <<<
+       1) SHEET_ENDPOINT : URL do App da Web do Google Apps Script
+          (gera a planilha de leads). Enquanto contiver "XXX", os dados
+          NÃO são gravados (a página só libera o vídeo).
+       2) VIDEO_URL : link do YouTube (ex.: https://youtu.be/AbCdEf123).
+          Enquanto contiver "XXX", mostra "vídeo em breve" após o cadastro.
+       O QR impresso continua válido para sempre.
        ================================================================ -->
   <style>
-    html,body{margin:0;height:100%}
-    body{background:#0A0A0A;color:#C9A961;
+    :root{--gold:#C9A961;--bg:#0A0A0A;--ink:#cfcfcf;}
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%}
+    body{background:var(--bg);color:var(--gold);
          font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-         display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
-    h1{font-weight:600;letter-spacing:4px;margin:0 0 6px;font-size:clamp(28px,7vw,44px)}
-    .sub{letter-spacing:3px;font-size:13px;opacity:.7;text-transform:uppercase;margin-bottom:22px}
-    p{color:#cfcfcf;line-height:1.5;max-width:440px}
-    a{color:#C9A961}
-    .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#C9A961;
+         display:flex;align-items:center;justify-content:center;
+         text-align:center;padding:28px 22px;min-height:100vh}
+    .wrap{width:100%;max-width:430px}
+    h1{font-weight:600;letter-spacing:4px;margin:0 0 6px;font-size:clamp(30px,8vw,46px)}
+    .sub{letter-spacing:3px;font-size:12px;opacity:.7;text-transform:uppercase;margin-bottom:26px}
+    .lead{color:var(--ink);line-height:1.5;font-size:15px;margin:0 0 22px}
+    form{display:flex;flex-direction:column;gap:14px;text-align:left}
+    label{font-size:12px;letter-spacing:1px;text-transform:uppercase;opacity:.85;margin-bottom:-6px}
+    input{width:100%;padding:15px 16px;border-radius:12px;border:1px solid #2a2a2a;
+          background:#141414;color:#fff;font-size:16px;outline:none;transition:border-color .2s}
+    input:focus{border-color:var(--gold)}
+    input::placeholder{color:#6b6b6b}
+    .hp{position:absolute;left:-9999px;opacity:0;height:0;width:0}
+    button{margin-top:6px;padding:16px;border:0;border-radius:12px;cursor:pointer;
+           background:var(--gold);color:#0A0A0A;font-size:16px;font-weight:700;
+           letter-spacing:1px;transition:opacity .2s}
+    button:disabled{opacity:.6;cursor:default}
+    .note{color:#8a8a8a;font-size:11px;line-height:1.5;margin-top:8px}
+    .err{color:#e07a7a;font-size:13px;min-height:16px;margin-top:-4px}
+    .player{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}
+    .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+    .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);
          margin:0 3px;animation:b 1.2s infinite ease-in-out}
     .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
     @keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
+    a{color:var(--gold)}
+    .hide{display:none!important}
   </style>
   <script>
-    // >>> TROQUE AQUI quando tiver a URL do YouTube (não listado) <<<
-    var VIDEO_URL = "https://youtu.be/XXXXXXXXXXX";
-
-    // Se a URL real já foi definida (não contém "XXX"), redireciona.
-    if (VIDEO_URL.indexOf("XXX") === -1) {
-      window.location.replace(VIDEO_URL);
-    }
+    /* ===== CONFIG: editar estas 2 linhas ===== */
+    var SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbyELEoSKqcpnNx1sKTG7DcC7dApXFeyX3ceR90AlQZil7yDa16AlnrO2mv0RPc5k3R5Tg/exec";
+    var VIDEO_URL      = "https://youtu.be/_UZFZdSl5X0";
+    /* ========================================= */
   </script>
 </head>
 <body>
-  <div>
+  <div class="wrap">
     <h1>CASA AURORA</h1>
     <div class="sub">Kora Incorporadora · Jardins de Barcelona</div>
-    <p id="msg">
-      O vídeo de apresentação estará disponível aqui em instantes.<br>
-      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-    </p>
+
+    <!-- ETAPA 1: formulário -->
+    <div id="step-form">
+      <p class="lead">Preencha seus dados para assistir ao vídeo de apresentação da Casa Aurora.</p>
+      <form id="leadForm" autocomplete="on" novalidate>
+        <label for="nome">Nome</label>
+        <input id="nome" name="nome" type="text" placeholder="Seu nome" required>
+        <label for="whatsapp">WhatsApp</label>
+        <input id="whatsapp" name="whatsapp" type="tel" inputmode="numeric"
+               placeholder="(35) 99999-9999" required>
+        <!-- honeypot anti-spam (não preencher) -->
+        <input class="hp" tabindex="-1" autocomplete="off" name="empresa" id="empresa">
+        <div class="err" id="err"></div>
+        <button type="submit" id="btn">Assistir ao vídeo</button>
+        <p class="note">Ao continuar, você concorda em receber contato da Kora Incorporadora pelo WhatsApp.</p>
+      </form>
+    </div>
+
+    <!-- ETAPA 2: liberando -->
+    <div id="step-loading" class="hide">
+      <p class="lead">Liberando seu vídeo…
+        <br><span class="dot"></span><span class="dot"></span><span class="dot"></span></p>
+    </div>
+
+    <!-- ETAPA 3: vídeo / em breve -->
+    <div id="step-video" class="hide">
+      <p class="lead" id="video-msg">Aproveite o vídeo da Casa Aurora.</p>
+      <div class="player" id="player"></div>
+    </div>
   </div>
+
   <script>
-    // Caso a URL já esteja definida mas o replace falhe, mostra link manual.
-    if (VIDEO_URL.indexOf("XXX") === -1) {
-      document.getElementById("msg").innerHTML =
-        'Redirecionando para o vídeo…<br>Se não abrir, ' +
-        '<a href="' + VIDEO_URL + '">toque aqui</a>.';
+    var $ = function(id){ return document.getElementById(id); };
+
+    function ytId(url){
+      var m = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{6,})/);
+      return m ? m[1] : null;
     }
+    function show(step){
+      ["step-form","step-loading","step-video"].forEach(function(s){
+        $(s).classList.toggle("hide", s !== step);
+      });
+    }
+    function liberarVideo(){
+      show("step-video");
+      var id = ytId(VIDEO_URL);
+      if (VIDEO_URL.indexOf("XXX") !== -1 || !id){
+        $("video-msg").innerHTML = "Seu cadastro foi recebido!<br>O vídeo estará disponível aqui em instantes.";
+        $("player").classList.add("hide");
+        return;
+      }
+      $("player").innerHTML =
+        '<iframe src="https://www.youtube.com/embed/' + id +
+        '?autoplay=1&rel=0&modestbranding=1&playsinline=1" ' +
+        'allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+    }
+
+    // máscara de WhatsApp (formato brasileiro)
+    var wa = $("whatsapp");
+    wa.addEventListener("input", function(){
+      var d = wa.value.replace(/\D/g,"").slice(0,11);
+      var out = "";
+      if (d.length > 0) out = "(" + d.slice(0,2);
+      if (d.length >= 2) out += ") " + d.slice(2,7);
+      if (d.length >= 7) out += "-" + d.slice(7,11);
+      wa.value = out;
+    });
+
+    // visitante que já se cadastrou neste aparelho pula direto pro vídeo
+    if (localStorage.getItem("kora_casa_aurora_lead") === "1"){
+      liberarVideo();
+    }
+
+    $("leadForm").addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var nome = $("nome").value.trim();
+      var fone = wa.value.replace(/\D/g,"");
+      var err  = $("err");
+      if (nome.length < 2){ err.textContent = "Informe seu nome."; $("nome").focus(); return; }
+      if (fone.length < 10){ err.textContent = "Informe um WhatsApp válido com DDD."; wa.focus(); return; }
+      if ($("empresa").value){ return; } // honeypot acionado: ignora
+      err.textContent = "";
+      $("btn").disabled = true;
+      show("step-loading");
+
+      function finalizar(){
+        localStorage.setItem("kora_casa_aurora_lead","1");
+        liberarVideo();
+      }
+
+      if (SHEET_ENDPOINT.indexOf("XXX") === -1){
+        var body = new URLSearchParams();
+        body.append("nome", nome);
+        body.append("whatsapp", wa.value);
+        body.append("origem", "QR Casa Aurora");
+        fetch(SHEET_ENDPOINT, { method:"POST", mode:"no-cors", body: body })
+          .then(finalizar).catch(finalizar);
+        // garante liberação mesmo se a rede demorar
+        setTimeout(finalizar, 4000);
+      } else {
+        finalizar(); // endpoint ainda não configurado: libera assim mesmo
+      }
+    });
   </script>
 </body>
 </html>
