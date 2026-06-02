@@ -26,7 +26,8 @@
          font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
          display:flex;align-items:center;justify-content:center;
          text-align:center;padding:28px 22px;min-height:100vh}
-    .wrap{width:100%;max-width:430px}
+    .wrap{width:100%;max-width:430px;transition:max-width .3s ease}
+    .wrap.wide{max-width:900px}
     h1{font-weight:600;letter-spacing:4px;margin:0 0 6px;font-size:clamp(30px,8vw,46px)}
     .sub{letter-spacing:3px;font-size:12px;opacity:.7;text-transform:uppercase;margin-bottom:26px}
     .lead{color:var(--ink);line-height:1.5;font-size:15px;margin:0 0 22px}
@@ -127,6 +128,7 @@
     }
     function liberarVideo(){
       show("step-video");
+      document.querySelector(".wrap").classList.add("wide");
       montarWhatsapp();
       var id = ytId(VIDEO_URL);
       if (VIDEO_URL.indexOf("XXX") !== -1 || !id){
