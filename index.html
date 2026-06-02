@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Casa Aurora — Kora</title>
+  <!-- ================================================================
+       PÁGINA DE REDIRECIONAMENTO PERMANENTE — Casa Aurora (Kora)
+       O QR Code impresso na placa aponta para ESTA página.
+
+       >>> PARA ATIVAR / TROCAR O VÍDEO NO FUTURO <<<
+       Edite APENAS a linha VIDEO_URL abaixo, troque pela URL do
+       YouTube (ex: https://youtu.be/AbCdEf...) e salve/publique.
+       O QR impresso continua valendo para sempre.
+       Enquanto a URL contiver "XXX", a página mostra "vídeo em breve"
+       em vez de redirecionar para um link quebrado.
+       ================================================================ -->
+  <style>
+    html,body{margin:0;height:100%}
+    body{background:#0A0A0A;color:#C9A961;
+         font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+         display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+    h1{font-weight:600;letter-spacing:4px;margin:0 0 6px;font-size:clamp(28px,7vw,44px)}
+    .sub{letter-spacing:3px;font-size:13px;opacity:.7;text-transform:uppercase;margin-bottom:22px}
+    p{color:#cfcfcf;line-height:1.5;max-width:440px}
+    a{color:#C9A961}
+    .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#C9A961;
+         margin:0 3px;animation:b 1.2s infinite ease-in-out}
+    .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+    @keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
+  </style>
+  <script>
+    // >>> TROQUE AQUI quando tiver a URL do YouTube (não listado) <<<
+    var VIDEO_URL = "https://youtu.be/XXXXXXXXXXX";
+
+    // Se a URL real já foi definida (não contém "XXX"), redireciona.
+    if (VIDEO_URL.indexOf("XXX") === -1) {
+      window.location.replace(VIDEO_URL);
+    }
+  </script>
+</head>
+<body>
+  <div>
+    <h1>CASA AURORA</h1>
+    <div class="sub">Kora Incorporadora · Jardins de Barcelona</div>
+    <p id="msg">
+      O vídeo de apresentação estará disponível aqui em instantes.<br>
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </p>
+  </div>
+  <script>
+    // Caso a URL já esteja definida mas o replace falhe, mostra link manual.
+    if (VIDEO_URL.indexOf("XXX") === -1) {
+      document.getElementById("msg").innerHTML =
+        'Redirecionando para o vídeo…<br>Se não abrir, ' +
+        '<a href="' + VIDEO_URL + '">toque aqui</a>.';
+    }
+  </script>
+</body>
+</html>
